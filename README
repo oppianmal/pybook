@@ -1,1 +1,18 @@
-Some comments here
+Experimental GTK Contacts Browser app
+--------------------------------------------------------------
+Experimental PyGTK contacts browser app.   
+Works by using the Python GTK and Evolution bindings 
+to render and display your Evolution contact data in a 
+Mac OS X style contact browser application.
+
+To run the app:
+$ python mycontacts.py
+
+All GUI resources are defined and maintained in the 
+corresponding mycontacts.glade GLADE file.
+
+Prerequisites
+--------------------
+* Python 2.5+
+* Evolution
+* Python evolution, gtk, gobject, pango, bluetooth bindings
