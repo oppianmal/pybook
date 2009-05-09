@@ -36,7 +36,15 @@ class contactDetails:
         value.set_alignment(0.00,0.00)
         x,x1,y,y1=1,2,offset,offset+1
         table.attach(value,x,x1,y,y1,xoptions=gtk.FILL,yoptions=gtk.FILL,xpadding=10,ypadding=5) # x-x1 is the horiz range.  y-y1 is the vert range
-        
+
+    @staticmethod
+    def setupInfoField(version,lastmod,table,offset):
+        info=gtk.Label("<span size='small'><i>vCard v%s, modified %s</i></span>" % (version,lastmod))
+        info.set_use_markup(True)
+        info.set_alignment(0.00,0.00)
+        x,x1,y,y1=1,2,offset,offset+1
+        table.attach(info,x,x1,y,y1,xoptions=gtk.FILL,yoptions=gtk.FILL,xpadding=10,ypadding=5) # x-x1 is the horiz range.  y-y1 is the vert range
+
     @staticmethod
     def vcardThumbnailToGtkImage(photo):
         # Now we need to shovel it into a GTKImage....
@@ -65,27 +73,44 @@ class contactDetails:
     def populateVobjectContactDetailFields(table,cont):
         ''' TODO: Need to do a proper label mapping and process these in the right order '''
         offset=0
-        keys=[str(key) for key in cont.contents.keys()]
-        for k in keys:
-            # SPECIAL CASES:  'email', 'tel', 'org' - they are arrays
-            if k in ['adr','note','title','bday','url','email','tel']:
-                value=eval('cont.'+k+'.value')
-                # Need to replace <BR> tags with \n and replace & with amp;
-                if k=='note':
-                    value=value.replace('&','amp;')
-                    value=gtk.Label("<span size='large'>%s</span>" % value)   # Convert & to amp; etc
-                    value.set_property("wrap",True)
-                    value.set_property("wrap-mode",pango.WRAP_WORD)
-                else:
+        keys=cont.contents
+        #validfields=['org','email','tel','adr','url','bday','note','fn','version']
+        validfields=['org','email','tel','adr','url','bday','note']
+        translations=['Organisation','Email','Phone','Address','URL','Birthdate','Note']
+        labelmapping=dict(zip(validfields,translations))
+        for k in validfields:
+            if cont.contents.has_key(k):
+                if k=='org':
+                    value=', '.join(cont.org.value)
                     value=gtk.Label("<span size='large'>%s</span>" % value)
-                contactDetails.setupContactField(k,value,table,offset)
-                offset+=1
-            elif k=='org':
-                value=', '.join(cont.org.value)
-                value=gtk.Label("<span size='large'>%s</span>" % value)
-                contactDetails.setupContactField(k,value,table,offset)
-                offset+=1
-                
+                    contactDetails.setupContactField(k,value,table,offset)
+                    offset+=1
+                else:
+                    cl=cont.contents.get(k)  # vobject "content line" holding potentially > 1 value for a k
+                    for c in cl:
+                        value=c.value
+                        def mapFieldTypeToLabel(k,p):
+                            if p.has_key(u'TYPE'):
+                                typearr=p.get(u'TYPE') 
+                                typearr=[l.lower().capitalize() for l in typearr]
+                                return ' '.join(typearr)+' '+labelmapping.get(k)
+                            return labelmapping.get(k)
+                        label=mapFieldTypeToLabel(k,c.params) # We use a mixture of key value and type params to generate our label
+                        # Need to replace <BR> tags with \n and replace & with amp;
+                        if k=='note':
+                            value=value.replace('&','amp;')
+                            value=gtk.Label("<span size='large'>%s</span>" % value)   # Convert & to amp; etc
+                            value.set_property("wrap",True)
+                            value.set_property("wrap-mode",pango.WRAP_WORD)
+                        else:
+                            value=gtk.Label("<span size='large'>%s</span>" % value)
+                        contactDetails.setupContactField(label,value,table,offset)
+                        offset+=1
+        # post process 'rev' and 'version'
+        lastmod=cont.contents.get('rev')[0].value
+        ver=cont.contents.get('version')[0].value
+        contactDetails.setupInfoField(ver,lastmod,table,offset)
+        
     @staticmethod
     def populateEvolutionContactDetailFields(table,cont):
         # Note that we MUST supply these for the field display to work properly.
