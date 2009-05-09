@@ -102,6 +102,11 @@ else:
     print "OS '%s' on platform '%s' not yet supported!" % (osname,platf)
     sys.exit()
 
+#--------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+USE_VOBJECT_PARSER=True
+USE_VCARD_THUMBNAIL=True
+
 class ContactsApp:
     def __init__(self):
         log.debug("ContactsApp::__init__")
@@ -186,22 +191,18 @@ class ContactsApp:
         self.currentContact=(contId,contFullName)
         cont=self.getContactById(contId)
         vcf=cont.get_vcard_string()
-        cont=vobject.readOne(vcf)   # Use Chandler vobject library to process Evolution vCard 3.0 format
+        vcont=vobject.readOne(vcf)   # Use Chandler vobject library to process Evolution vCard 3.0 format
         view,table=contactDetails.initContactDetailView(self)
         contactDetails.setupContactNameLabel(self,contFullName)
         try:
-            photo=cont.photo.value
-            # Now we need to shovel it into a GTKImage....
-            file="temp.jpg"
-            f=open(file,'w')
-            f.write(photo)
-            f.close()
-            image=gtk.gdk.pixbuf_new_from_file(file)
-            image=image.scale_simple(80,80, gtk.gdk.INTERP_BILINEAR)    # scale it dude
+            if USE_VCARD_THUMBNAIL:
+                image=contactDetails.vcardThumbnailToGtkImage(vcont.photo.value)
+            else:
+                image=cont.get_photo(80)    # gtk.gdk.Pixbuf - you can pull out this photo into a GTKImage        
         except:
             image=None
-        contactDetails.setupContactThumbnail(self,image)
-        contactDetails.populateVobjectContactDetailFields(table,cont)
+        contactDetails.setupContactThumbnail(self,image) 
+        contactDetails.populateVobjectContactDetailFields(table,vcont)
         view.show_all()     # To now show the table
         
     def displayEvolutionContact(self,contId,contFullName):
@@ -217,12 +218,8 @@ class ContactsApp:
         contactDetails.setupContactNameLabel(self,contFullName)
         image=cont.get_photo(80)    # gtk.gdk.Pixbuf - you can pull out this photo into a GTKImage        
         contactDetails.setupContactThumbnail(self,image)
-        # Populate our table with attr-vals from contact.  Note that 
-        # we MUST supply these for the field display to work properly.
-        validfields=['title','org','org_unit','mobile_phone','business_phone','email_1','email_2','birth_date','note','address-home','address-work']
-        translations=['Title','Organisation','Unit','Mobile','Business Phone','Main Email','Secondary email','Birthdate','Note','Home xAddress','Work Address']
-        labelmapping=dict(zip(validfields,translations))
-        contactDetails.populateEvolutionContactDetailFields(table,cont,validfields,labelmapping) 
+        # Populate our table with attr-vals from contact.  
+        contactDetails.populateEvolutionContactDetailFields(table,cont) 
         view.show_all()     # To now show the table
         
     def editContact(self,contId,contFullName):
@@ -232,8 +229,10 @@ class ContactsApp:
         iter=self.contactModel.get_iter(contId)
         self.contactModelView.set_cursor(contId,col)
         contId,contFullName=self.contactModel.get(iter,0,1)
-        #self.displayEvolutionContact(contId,contFullName)
-        self.displayVCardContact(contId,contFullName)
+        if USE_VOBJECT_PARSER:
+            self.displayVCardContact(contId,contFullName)
+        else:
+            self.displayEvolutionContact(contId,contFullName)
         
     def getContactById(self,contId):
         # NOTE: self.addresses[0].__doc__   gives you the supported properties

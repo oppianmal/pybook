@@ -38,6 +38,15 @@ class contactDetails:
         table.attach(value,x,x1,y,y1,xoptions=gtk.FILL,yoptions=gtk.FILL,xpadding=10,ypadding=5) # x-x1 is the horiz range.  y-y1 is the vert range
         
     @staticmethod
+    def vcardThumbnailToGtkImage(photo):
+        # Now we need to shovel it into a GTKImage....
+        file="temp.jpg"
+        f=open(file,'w')
+        f.write(photo)
+        f.close()
+        return gtk.gdk.pixbuf_new_from_file(file).scale_simple(80,80, gtk.gdk.INTERP_BILINEAR)    # scale it dude
+    
+    @staticmethod
     def setupContactThumbnail(parent,image=None):
         photo=parent.contactDetailPhoto
         if image:
@@ -54,6 +63,7 @@ class contactDetails:
 
     @staticmethod
     def populateVobjectContactDetailFields(table,cont):
+        ''' TODO: Need to do a proper label mapping and process these in the right order '''
         offset=0
         keys=[str(key) for key in cont.contents.keys()]
         for k in keys:
@@ -77,7 +87,11 @@ class contactDetails:
                 offset+=1
                 
     @staticmethod
-    def populateEvolutionContactDetailFields(table,cont,validfields,labelmapping):
+    def populateEvolutionContactDetailFields(table,cont):
+        # Note that we MUST supply these for the field display to work properly.
+        validfields=['title','org','org_unit','mobile_phone','business_phone','email_1','email_2','birth_date','note','address-home','address-work']
+        translations=['Title','Organisation','Unit','Mobile','Business Phone','Main Email','Secondary email','Birthdate','Note','Home Address','Work Address']
+        labelmapping=dict(zip(validfields,translations))
         offset=0
         for prop in validfields:
             value=cont.get_property(prop)
