@@ -26,9 +26,20 @@ class contactDetails:
         parent.contactDetailName.set_use_markup(True)
         
     @staticmethod
-    def setupContactThumbnail(parent,cont):
+    def setupContactField(label,value,table,offset):
+        label=gtk.Label("<span size='large'><b>%s:</b></span>" % label)
+        label.set_use_markup(True)
+        label.set_alignment(0.00,0.00)
+        x,x1,y,y1=0,1,offset,offset+1
+        table.attach(label,x,x1,y,y1,xoptions=gtk.FILL,yoptions=gtk.FILL,xpadding=0,ypadding=5) # x-x1 is the horiz range.  y-y1 is the vert range
+        value.set_use_markup(True)
+        value.set_alignment(0.00,0.00)
+        x,x1,y,y1=1,2,offset,offset+1
+        table.attach(value,x,x1,y,y1,xoptions=gtk.FILL,yoptions=gtk.FILL,xpadding=10,ypadding=5) # x-x1 is the horiz range.  y-y1 is the vert range
+        
+    @staticmethod
+    def setupContactThumbnail(parent,image=None):
         photo=parent.contactDetailPhoto
-        image=cont.get_photo(80)    # gtk.gdk.Pixbuf - you can pull out this photo into a GTKImage
         if image:
             photo.set_from_pixbuf(image)
             photo.set_property("height-request",80)
@@ -40,18 +51,37 @@ class contactDetails:
             photo.set_property("width-request",0)
             photo.set_no_show_all(True)
         parent.contactDetailPhoto=photo
-        
+
     @staticmethod
-    def populateContactDetailFields(table,cont,validfields,labelmapping):
+    def populateVobjectContactDetailFields(table,cont):
+        offset=0
+        keys=[str(key) for key in cont.contents.keys()]
+        for k in keys:
+            # SPECIAL CASES:  'email', 'tel', 'org' - they are arrays
+            if k in ['adr','note','title','bday','url','email','tel']:
+                value=eval('cont.'+k+'.value')
+                # Need to replace <BR> tags with \n and replace & with amp;
+                if k=='note':
+                    value=value.replace('&','amp;')
+                    value=gtk.Label("<span size='large'>%s</span>" % value)   # Convert & to amp; etc
+                    value.set_property("wrap",True)
+                    value.set_property("wrap-mode",pango.WRAP_WORD)
+                else:
+                    value=gtk.Label("<span size='large'>%s</span>" % value)
+                contactDetails.setupContactField(k,value,table,offset)
+                offset+=1
+            elif k=='org':
+                value=', '.join(cont.org.value)
+                value=gtk.Label("<span size='large'>%s</span>" % value)
+                contactDetails.setupContactField(k,value,table,offset)
+                offset+=1
+                
+    @staticmethod
+    def populateEvolutionContactDetailFields(table,cont,validfields,labelmapping):
         offset=0
         for prop in validfields:
             value=cont.get_property(prop)
             if value and type(value)==type('str'):  # it's a string field
-                label=gtk.Label("<span size='large'><b>%s:</b></span>" % labelmapping.get(prop))
-                label.set_use_markup(True)
-                label.set_alignment(0.00,0.00)
-                x,x1,y,y1=0,1,offset,offset+1
-                table.attach(label,x,x1,y,y1,xoptions=gtk.FILL,yoptions=gtk.FILL,xpadding=0,ypadding=5) # x-x1 is the horiz range.  y-y1 is the vert range
                 # Need to replace <BR> tags with \n and replace & with amp;
                 if prop=='note':
                     value=value.replace('<br>','\n')
@@ -62,10 +92,8 @@ class contactDetails:
                     value.set_property("wrap-mode",pango.WRAP_WORD)
                 else:
                     value=gtk.Label("<span size='large'>%s</span>" % value)
-                value.set_use_markup(True)
-                value.set_alignment(0.00,0.00)
-                x,x1,y,y1=1,2,offset,offset+1
-                table.attach(value,x,x1,y,y1,xoptions=gtk.FILL,yoptions=gtk.FILL,xpadding=10,ypadding=5) # x-x1 is the horiz range.  y-y1 is the vert range
+                label=labelmapping.get(prop)
+                contactDetails.setupContactField(label,value,table,offset)
                 offset+=1
             elif value and type(value)==gobject.GBoxed: # it's got some raw data in it
                 data=value.copy()

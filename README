@@ -16,3 +16,4 @@ Prerequisites
 * Python 2.5+
 * Evolution
 * Python evolution, gtk, gobject, pango, bluetooth bindings
+* Python vobject module (from Chandler project)

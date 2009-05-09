@@ -21,17 +21,21 @@
 #   - WAB                                                                                       ---
 # 6. Implement contact search support                                                           DONE
 # 7. Export contacts as .vcf                                                                    DONE
-# 8. Import contacts from .vcf                                                                  TBD
+# 8. Parse and render contacts from .vcf                                                  DONE
 #   - Requires vCard parser/generator support - we need to shift all         
-#     data interfacing to Evolution to be done via vCard using sympla...
-# 9. Bluetooth sending of contacts via OBEX                                             TBD
+#     data interfacing to Evolution to be done via vCard using vobject
+#     parser from Chandler.
+# 9. Build into simple distributable package using pyinstaller                   TBD
 # 10. Implement contacts deletion                                                            TBD
+# 11. Bluetooth sending of contacts via OBEX                                             TBD
 #
-# 11. Stretch goal - implement Bluetooth support for importing contacts from a phone (SyncML)
-# 12. Stretch goal - implement web service support for importing contacts from Google
-# 13. Internationalisation and text format support (pango)
+# 12. Stretch goal - implement Bluetooth support for importing contacts from a phone (SyncML)
+# 13. Stretch goal - implement web service support for importing contacts from Google
+# 14. Internationalisation and text format support (pango)
 
 '''
+Snippet that serves to show how to handle import
+
 def _create_object(self, contact):
         obj = evolution.ebook.EContact(vcard=contact.get_vcard_string())
         if self.book.add_contact(obj):
@@ -65,9 +69,14 @@ except:
 from globals import *
 from gtkUtils import contactDetails
 from logUtils import log
-from contactUtils import symplaContact
+#from contactUtils import symplaContact
 from dialogs import AboutDialog,ExportDialog,BluetoothDevicesDialog,ConfirmationDialog
-
+try:
+    import vobject
+except:
+    print "Could not find vobject vCard support modulex"
+    sys.exit()
+    
 osname,platf=determinePlatform()
 log.debug("OS: '%s', PLATFORM: '%s'" % (osname,platf))
 if osname=='nt':
@@ -177,14 +186,23 @@ class ContactsApp:
         self.currentContact=(contId,contFullName)
         cont=self.getContactById(contId)
         vcf=cont.get_vcard_string()
-        cont=symplaContact(vcard=vcf)
-        # Now follows the display utility logic
+        cont=vobject.readOne(vcf)   # Use Chandler vobject library to process Evolution vCard 3.0 format
         view,table=contactDetails.initContactDetailView(self)
         contactDetails.setupContactNameLabel(self,contFullName)
-        # TO DO: sort out thumbnail and other fields...
-        #contactDetails.setupContactThumbnail(self,cont)
-        
-        
+        try:
+            photo=cont.photo.value
+            # Now we need to shovel it into a GTKImage....
+            file="temp.jpg"
+            f=open(file,'w')
+            f.write(photo)
+            f.close()
+            image=gtk.gdk.pixbuf_new_from_file(file)
+            image=image.scale_simple(80,80, gtk.gdk.INTERP_BILINEAR)    # scale it dude
+        except:
+            image=None
+        contactDetails.setupContactThumbnail(self,image)
+        contactDetails.populateVobjectContactDetailFields(table,cont)
+        view.show_all()     # To now show the table
         
     def displayEvolutionContact(self,contId,contFullName):
         ''' Displays corresponding Evolution contact field details in the table in 'summaryViewport' '''
@@ -197,13 +215,14 @@ class ContactsApp:
         # Now follows the display utility logic
         view,table=contactDetails.initContactDetailView(self)
         contactDetails.setupContactNameLabel(self,contFullName)
-        contactDetails.setupContactThumbnail(self,cont)
+        image=cont.get_photo(80)    # gtk.gdk.Pixbuf - you can pull out this photo into a GTKImage        
+        contactDetails.setupContactThumbnail(self,image)
         # Populate our table with attr-vals from contact.  Note that 
         # we MUST supply these for the field display to work properly.
         validfields=['title','org','org_unit','mobile_phone','business_phone','email_1','email_2','birth_date','note','address-home','address-work']
         translations=['Title','Organisation','Unit','Mobile','Business Phone','Main Email','Secondary email','Birthdate','Note','Home xAddress','Work Address']
         labelmapping=dict(zip(validfields,translations))
-        contactDetails.populateContactDetailFields(table,cont,validfields,labelmapping) 
+        contactDetails.populateEvolutionContactDetailFields(table,cont,validfields,labelmapping) 
         view.show_all()     # To now show the table
         
     def editContact(self,contId,contFullName):
@@ -213,8 +232,8 @@ class ContactsApp:
         iter=self.contactModel.get_iter(contId)
         self.contactModelView.set_cursor(contId,col)
         contId,contFullName=self.contactModel.get(iter,0,1)
-        self.displayEvolutionContact(contId,contFullName)
-        #self.displayVCardContact(contId,contFullName)
+        #self.displayEvolutionContact(contId,contFullName)
+        self.displayVCardContact(contId,contFullName)
         
     def getContactById(self,contId):
         # NOTE: self.addresses[0].__doc__   gives you the supported properties
