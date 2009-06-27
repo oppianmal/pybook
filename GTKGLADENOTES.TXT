@@ -1,0 +1,79 @@
+GTK+ (LGPL)
+-------------------
+GTK+ is a highly usable feature rich toolkit for creating GUIs which boasts cross platform 
+compatibility and an easy to use API.  GTK+ is written in C but has bindings to many other 
+popular languages such as C++, Python and C#.
+You can determine the version of GTK+ you are running thus:
+$ gtk.gtk_version
+(2,12,9)
+=> you have GTK+ 2.12.9
+The latest stable release as of Jan 09 is 2.14.7.
+
+PyGTK (LGPL)
+--------------------
+"It is fair to say that for a small company, using pyGTK over other GUI 
+development environments, such as native C, is a competitive advantage."
+http://www.linuxjournal.com/article/6586
+
+PyGTK lets you easily create GUI programs using python.  The underlying GTK+ library 
+provides all kinds of visual elements and utilities and if needed you can use it to develop 
+fully fledged apps for the GNOME desktop.
+PyGTK apps are truly multiplatform - they can run unmodified on Linux, Windows and Mac.
+You can determine the version of PyGTK+ you are running thus:
+$ gtk.pygtk_version
+(2,12,1)
+=> you have PyGTK 2.12.1
+The latest stable release as of Jan 09 is 2.14.7.
+To install PyGTK on Windows you need to install: GTK+ runtime, PyCairo, PyGObject 
+and then PyGTK.
+
+Glade 
+---------
+"The theory behind using Glade and libglade is it wastes time to create your GUI using code. 
+Sitting down and telling the Python interpreter where each widget goes, what color it is and 
+what the defaults are is a huge time sink. 
+The important thing to learn about GUI development is there are basically two types of 
+objects: widgets, such as labels and entry boxes and other things you can see, and 
+containers for those widgets. Most likely, you will use one of three kinds of containers, 
+the vertical box, the horizontal box or the table. To create complex layouts, its easiest 
+to nest these containers together in whatever order you need."
+http://www.linuxjournal.com/article/6586
+
+There are two versions of Glade (!).  Glade-2 and the completely rewritten Glade-3. 
+The main difference is that C code generation has been removed from Glade-3.  The 
+preferred way of using Glade files now is with libglade.  Otherwise Glade-3 shares the 
+same XML format as Glade-2.
+Ubuntu Eee comes with Glade-2 as default.  Glade-3 is a simple enough install:
+$ sudo apt-get install glade-3
+Both versions sit inside of "Programming".
+
+"Every piece of a GTK+ GUI is comprised of one or more "widgets" which are objects. All widgets will be derived from a base widget called GtkWidget. For example, an application's window is a widget called GtkWindow. The toolbar within that window is a widget called GtkToolbar. Although a GtkWindow is also a GtkWidget, a GtkWidget is not neccesarily a GtkWindow. Child widgets are derived from their parent objects to extend the functionality of that object. These are standard OOP (object oriented programming) concepts.
+Glade originally generated C code to build the GUI (and you'll still find examples and tutorials doing this). This was later discouraged in favor of using a library, Libglade, to build the interface at run time. And finally, as of Glade3, the old method has become deprecated. That means the ONLY thing glade does is allow you to generate a glade file which describes how the GUI is going to be built. This allows more flexibility with the developer, prevents having to re-compile applications when a minor interface change is needed, and allows more programming languages to be used with Glade.
+GTK+ widgets "packed" into various containers. Containers can be packed into containers into containers and so forth. There are various packing properties which effect how space is allocated for widgets packed into containers. Through these packing properties and nesting containers, we can have complex GUI designs without having to write code to handler the resizing and re-positioning of our widgets."
+http://www.micahcarrick.com/12-24-2007/gtk-glade-tutorial-part-1.html
+
+Worked Example: MyContacts
+----------------------------------------------
+* Open Glade-3.  Create and save mycontacts.glade with various widgets and containers as required.
+* Optional conversion of .glade to GtkBuilder-specific .xml file is done thus:
+$ gtk-builder-convert mycontacts.glade mycontacts.xml
+* Now create a simple mycontacts.py file to drive the .glade file
+* Watch that you set the main window visible!
+
+
+References
+------------------
+1. A Beginner's Guide to Using pyGTK and Glade: 
+    http://www.linuxjournal.com/article/6586
+2. PyGTK2.0 Tutorial:
+    http://www.moeraki.com/pygtktutorial/pygtk2tutorial/index.html
+3. The GTK+ Project: 
+    http://www.gtk.org/
+4. Glade - a UI Designer for GTK+ and GNOME:  
+    http://glade.gnome.org/
+5. Creating a GUI using PyGTK and Glade (part I): 
+    http://www.learningpython.com/2006/05/07/creating-a-gui-using-pygtk-and-glade/
+6. Building an application with PyGTK and Glade (partII): 
+    http://www.learningpython.com/2006/05/30/building-an-application-with-pygtk-and-glade/
+7. GTK+ and Glade3 GUI Programming Tutorial - Part 1
+    http://www.micahcarrick.com/12-24-2007/gtk-glade-tutorial-part-1.html
