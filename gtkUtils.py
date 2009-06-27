@@ -75,41 +75,53 @@ class contactDetails:
         offset=0
         keys=cont.contents
         #validfields=['org','email','tel','adr','url','bday','note','fn','version']
-        validfields=['org','email','tel','adr','url','bday','note']
-        translations=['Organisation','Email','Phone','Address','URL','Birthdate','Note']
+        validfields=['org','title','email','tel','adr','url','bday','note']
+        translations=['Organisation','Title','Email','Phone','Address','URL','Birthdate','Note']
         labelmapping=dict(zip(validfields,translations))
         for k in validfields:
             if cont.contents.has_key(k):
                 if k=='org':
-                    value=', '.join(cont.org.value)
-                    value=gtk.Label("<span size='large'>%s</span>" % value)
-                    contactDetails.setupContactField(k,value,table,offset)
-                    offset+=1
+                    offset=contactDetails.procVobjectContactOrgField(cont,labelmapping,table,k,offset)
                 else:
-                    cl=cont.contents.get(k)  # vobject "content line" holding potentially > 1 value for a k
-                    for c in cl:
-                        value=c.value
-                        def mapFieldTypeToLabel(k,p):
-                            if p.has_key(u'TYPE'):
-                                typearr=p.get(u'TYPE') 
-                                typearr=[l.lower().capitalize() for l in typearr]
-                                return ' '.join(typearr)+' '+labelmapping.get(k)
-                            return labelmapping.get(k)
-                        label=mapFieldTypeToLabel(k,c.params) # We use a mixture of key value and type params to generate our label
-                        # Need to replace <BR> tags with \n and replace & with amp;
-                        if k=='note':
-                            value=value.replace('&','amp;')
-                            value=gtk.Label("<span size='large'>%s</span>" % value)   # Convert & to amp; etc
-                            value.set_property("wrap",True)
-                            value.set_property("wrap-mode",pango.WRAP_WORD)
-                        else:
-                            value=gtk.Label("<span size='large'>%s</span>" % value)
-                        contactDetails.setupContactField(label,value,table,offset)
-                        offset+=1
+                    offset=contactDetails.procVobjectContactField(cont,labelmapping,table,k,offset)
         # post process 'rev' and 'version'
         lastmod=cont.contents.get('rev')[0].value
         ver=cont.contents.get('version')[0].value
         contactDetails.setupInfoField(ver,lastmod,table,offset)
+        
+    @staticmethod
+    def mapVobjectFieldTypeToLabel(labelmapping,k,p):
+        if p.has_key(u'TYPE'):
+            typearr=p.get(u'TYPE') 
+            typearr=[l.lower().capitalize() for l in typearr]
+            return ' '.join(typearr)+' '+labelmapping.get(k)
+        return labelmapping.get(k)
+            
+    @staticmethod
+    def procVobjectContactOrgField(cont,labelmapping,table,k,offset):
+        value=', '.join(cont.org.value)
+        value=gtk.Label("<span size='large'>%s</span>" % value)
+        label=contactDetails.mapVobjectFieldTypeToLabel(labelmapping,k,{})
+        contactDetails.setupContactField(label,value,table,offset)
+        return offset+1
+        
+    @staticmethod
+    def procVobjectContactField(cont,labelmapping,table,k,offset):
+        cl=cont.contents.get(k)  # vobject "content line" holding potentially > 1 value for a k
+        for c in cl:
+            value=c.value
+            label=contactDetails.mapVobjectFieldTypeToLabel(labelmapping,k,c.params) # We use a mixture of key value and type params to generate our label
+            # Need to replace <BR> tags with \n and replace & with amp;
+            if k=='note':
+                value=value.replace('&','amp;')
+                value=gtk.Label("<span size='large'>%s</span>" % value)   # Convert & to amp; etc
+                value.set_property("wrap",True)
+                value.set_property("wrap-mode",pango.WRAP_WORD)
+            else:
+                value=gtk.Label("<span size='large'>%s</span>" % value)
+            contactDetails.setupContactField(label,value,table,offset)
+            offset+=1
+        return offset
         
     @staticmethod
     def populateEvolutionContactDetailFields(table,cont):
